@@ -9,12 +9,12 @@ namespace NoteOnCloud.Hubs
 {
     public class NoteHub : Hub
     {
-        public void UpdateNote(string url, string message)
+        public void UpdateNote(string url, string message, int operation)
         {
-            Clients.AllExcept(Context.ConnectionId).updateNoteOnPage(url, message);
+            //operation = 1 -- Add
+            //operation = 2 -- Full text update
+            Clients.AllExcept(Context.ConnectionId).updateNoteOnPage(url, message, operation);
         }
-
-
     }
 
     public class NoteModel

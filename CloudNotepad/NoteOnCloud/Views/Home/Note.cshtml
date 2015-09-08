@@ -6,7 +6,7 @@
 
 <div class="container">
     <textarea id="txtNote" rows="20" cols="500" placeholder="Enter your note"></textarea>
-    <input type="hidden" id="url" />
+    <input type="hidden" id="url" value="test"/>
 </div>
 @section scripts {
     <!--Script references. -->
@@ -22,28 +22,35 @@
             var noteHub = $.connection.noteHub;
             var noteChanged = false;
             var sentText = '';
-            var textToBeSent = '';
+            //var textToBeSent = '';
+            var currentText = '';
 
             // Create a function that the hub can call back to display messages.
-            noteHub.client.updateNoteOnPage = function (name, message) {
+            noteHub.client.updateNoteOnPage = function (name, message, operation) {
                 // Add the message to the page.
-                $('#txtNote').append(htmlEncode(message));
-                sentText = sentText.concat(message);
+                if (operation === 1) {
+                    $('#txtNote').append(htmlEncode(message));
+                    sentText = sentText.concat(message);
+                }
+                if (operation === 2) {
+                    $('#txtNote').val(htmlEncode(message));
+                    sentText = message;
+                } 
             };
 
             // Get the user name and store it to prepend to messages.
-            $('#url').val(prompt('Enter the URL:', ''));
+            //$('#url').val(prompt('Enter the URL:', ''));
 
             // Set initial focus to message input box.
             $('#txtNote').focus();
 
             // Start the connection.
             $.connection.hub.start().done(function () {
-                $('#txtNote').on('input propertychange change', function () {
+                $('#txtNote').on('input propertychange change', function (eventData) {
                     console.log('Textarea Change');
                     noteChanged = true;
-                    var currentText = $('#txtNote').val();
-                    textToBeSent = currentText.replace(sentText, '');
+                    currentText = $('#txtNote').val();
+                    //textToBeSent = currentText.replace(sentText, '');
                 });
                 setInterval(updateServerNote, 50);
             });
@@ -51,9 +58,23 @@
             function updateServerNote() {
                 // Only update server if we have a new movement
                 if (noteChanged) {
-                    noteHub.server.updateNote($('#url').val(), textToBeSent);
+                    
+                    var textToBeSent = '';
+                    if (currentText.indexOf(sentText) === -1) {
+                        //update complete string
+                        textToBeSent = currentText;
+                        noteHub.server.updateNote($('#url').val(), textToBeSent, 2);
+                        sentText = textToBeSent;
+                    }
+                    else {
+                        textToBeSent = currentText.replace(sentText, '');
+                        noteHub.server.updateNote($('#url').val(), textToBeSent, 1);
+                        sentText = sentText.concat(textToBeSent);
+                    }
+                    
                     noteChanged = false;
-                    sentText = sentText.concat(textToBeSent);
+
+                    
                 }
             }
         });
